@@ -3,6 +3,7 @@ import(
   "os"
   "strconv"
   "github.com/Sirupsen/logrus"
+  "github.com/docker/go-plugins-helpers/volume"
 )
 func main() {
   debug := os.Getenv("DEBUG")
