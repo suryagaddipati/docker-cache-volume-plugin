@@ -6,6 +6,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/volume"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -145,13 +146,28 @@ func (d *cacheDriver) Get(r *volume.GetRequest) (*volume.GetResponse, error) {
 	return &volume.GetResponse{}, logError("volume %s not found", r.Name)
 }
 
-func (d *cacheDriver) List() (*volume.ListResponse, error) {
+func (driver *cacheDriver) List() (*volume.ListResponse, error) {
 	logrus.WithField("method", "list").Debugf("")
 
-	d.Lock()
-	defer d.Unlock()
+	driver.Lock()
+	defer driver.Unlock()
 
-	return nil, nil
+	merged := driver.rootDirs.merged
+	matches, err := filepath.Glob(fmt.Sprintf("%s/*/*", merged))
+	if err != nil {
+		return &volume.ListResponse{}, err
+	}
+	if matches != nil {
+		var volumes []*volume.Volume = make([]*volume.Volume, len(matches))
+		for i, match := range matches {
+			mergeDir := strings.Replace(match, merged+"/", "", -1)
+			dirs := strings.Split(mergeDir, "/")
+			volumes[i] = driver.volume(dirs[0], dirs[1])
+		}
+		return &volume.ListResponse{Volumes: volumes}, nil
+
+	}
+	return &volume.ListResponse{}, nil
 }
 
 func (d *cacheDriver) Capabilities() *volume.CapabilitiesResponse {
