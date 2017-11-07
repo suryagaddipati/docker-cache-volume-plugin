@@ -8,6 +8,7 @@ import (
   "errors"
   "fmt"
 	"path"
+
 )
 
 type rootDirs struct {
@@ -47,11 +48,22 @@ func newCacheDriver(lower, upper, work, merged string) (*cacheDriver,error) {
 }
 
 
-func (d *cacheDriver) Create(r *volume.CreateRequest) error {
-  logrus.WithField("method", "create").Debugf("%#v", r)
+func (driver *cacheDriver) Create(req *volume.CreateRequest) error {
+  logrus.WithField("method", "create").Debugf("%#v", req)
 
-  d.Lock()
-  defer d.Unlock()
+  driver.Lock()
+  defer driver.Unlock()
+  jobName, buildNumber, err := getNames(req.Name)
+  if err!=nil{
+    return err
+  }
+  buildVolume := newBuildVolume(jobName, buildNumber, driver.rootDirs)
+	if buildVolume.exists() {
+    return logError( "Create-%s: The volume already exists", req.Name)
+  }
+  if err := buildVolume.init(); err != nil {
+		return logError("Create-%s: Failed to create Dirs. %s", req.Name, err)
+	}
   return nil
 }
 
