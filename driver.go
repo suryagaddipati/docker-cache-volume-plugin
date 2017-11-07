@@ -65,12 +65,15 @@ func (driver *cacheDriver) Create(req *volume.CreateRequest) error {
 	return nil
 }
 
-func (d *cacheDriver) Remove(r *volume.RemoveRequest) error {
-	logrus.WithField("method", "remove").Debugf("%#v", r)
+func (driver *cacheDriver) Remove(req *volume.RemoveRequest) error {
+	logrus.WithField("method", "remove").Debugf("%#v", req)
 
-	d.Lock()
-	defer d.Unlock()
-	return nil
+	driver.Lock()
+	defer driver.Unlock()
+
+  jobName, buildNumber, _ := getNames(req.Name)
+	buildVolume := newBuildVolume(jobName, buildNumber, driver.rootDirs)
+	return buildVolume.cleanUpVolume()
 }
 
 func (d *cacheDriver) Path(r *volume.PathRequest) (*volume.PathResponse, error) {
@@ -96,7 +99,6 @@ func (driver *cacheDriver) Mount(req *volume.MountRequest) (*volume.MountRespons
 	}
 
 	return &volume.MountResponse{Mountpoint: path.Join(driver.rootDirs.merged, jobName, buildNumber)}, nil
-
 }
 
 func (d *cacheDriver) Unmount(r *volume.UnmountRequest) error {
