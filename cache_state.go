@@ -69,4 +69,3 @@ func (cacheState *cacheState) save(cacheLowerRootDir string) error {
 	fileData, _ := json.Marshal(cacheState)
 	return ioutil.WriteFile(stateFile, fileData, 0600)
 }
-

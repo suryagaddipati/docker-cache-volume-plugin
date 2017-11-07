@@ -98,4 +98,3 @@ func (buildVolume *buildVolume) exists() bool {
 	_, err := os.Stat(buildVolume.rootDirs.work)
 	return err == nil
 }
-

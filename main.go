@@ -1,24 +1,26 @@
 package main
-import(
-  "os"
-  "log"
-  "strconv"
-  "github.com/Sirupsen/logrus"
+
+import (
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/volume"
+	"log"
+	"os"
+	"strconv"
 )
+
 const socketAddress = "/run/docker/plugins/cache-driver.sock"
 
 func main() {
-  debug := os.Getenv("DEBUG")
+	debug := os.Getenv("DEBUG")
 	if ok, _ := strconv.ParseBool(debug); ok {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
-  lowerRootDir := "/cache"
+	lowerRootDir := "/cache"
 	upperRootDir := "/mnt/cache-upper"
 	workRootDir := "/mnt/cache-work"
-	mergedRootDir :=  "/mnt/cache-merged"
+	mergedRootDir := "/mnt/cache-merged"
 
-  d, err := newCacheDriver(lowerRootDir,upperRootDir,workRootDir,mergedRootDir)
+	d, err := newCacheDriver(lowerRootDir, upperRootDir, workRootDir, mergedRootDir)
 	if err != nil {
 		log.Fatal(err)
 	}

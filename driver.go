@@ -1,136 +1,143 @@
 package main
 
 import (
-  "github.com/Sirupsen/logrus"
-  "github.com/docker/go-plugins-helpers/volume"
-  "sync"
-  "strings"
-  "errors"
-  "fmt"
+	"errors"
+	"fmt"
+	"github.com/Sirupsen/logrus"
+	"github.com/docker/go-plugins-helpers/volume"
 	"path"
-
+	"strings"
+	"sync"
 )
 
 type rootDirs struct {
-  lower  string
-  upper  string
-  work   string
-  merged string
+	lower  string
+	upper  string
+	work   string
+	merged string
 }
 
 func newRootDirs(lower, upper, work, merged string) rootDirs {
-  return rootDirs{
-    lower:  lower,
-    upper:  upper,
-    work:   work,
-    merged: merged,
-  }
+	return rootDirs{
+		lower:  lower,
+		upper:  upper,
+		work:   work,
+		merged: merged,
+	}
 }
 func (rootDirs rootDirs) mkdirs() error {
-  return mkdirs(rootDirs.lower, rootDirs.upper, rootDirs.work, rootDirs.merged)
+	return mkdirs(rootDirs.lower, rootDirs.upper, rootDirs.work, rootDirs.merged)
 }
 
 type cacheDriver struct {
-  sync.RWMutex
-  rootDirs *rootDirs
+	sync.RWMutex
+	rootDirs *rootDirs
 }
 
-func newCacheDriver(lower, upper, work, merged string) (*cacheDriver,error) {
-  rootDirs := newRootDirs(lower, upper, work, merged)
-  driver := &cacheDriver{
-    rootDirs: &rootDirs,
-  }
-  err := rootDirs.mkdirs()
-  if err!=nil{
-    return nil, err
-  }
-  return driver,nil
+func newCacheDriver(lower, upper, work, merged string) (*cacheDriver, error) {
+	rootDirs := newRootDirs(lower, upper, work, merged)
+	driver := &cacheDriver{
+		rootDirs: &rootDirs,
+	}
+	err := rootDirs.mkdirs()
+	if err != nil {
+		return nil, err
+	}
+	return driver, nil
 }
-
 
 func (driver *cacheDriver) Create(req *volume.CreateRequest) error {
-  logrus.WithField("method", "create").Debugf("%#v", req)
+	logrus.WithField("method", "create").Debugf("%#v", req)
 
-  driver.Lock()
-  defer driver.Unlock()
-  jobName, buildNumber, err := getNames(req.Name)
-  if err!=nil{
-    return err
-  }
-  buildVolume := newBuildVolume(jobName, buildNumber, driver.rootDirs)
+	driver.Lock()
+	defer driver.Unlock()
+	jobName, buildNumber, err := getNames(req.Name)
+	if err != nil {
+		return err
+	}
+	buildVolume := newBuildVolume(jobName, buildNumber, driver.rootDirs)
 	if buildVolume.exists() {
-    return logError( "Create-%s: The volume already exists", req.Name)
-  }
-  if err := buildVolume.init(); err != nil {
+		return logError("Create-%s: The volume already exists", req.Name)
+	}
+	if err := buildVolume.init(); err != nil {
 		return logError("Create-%s: Failed to create Dirs. %s", req.Name, err)
 	}
-  return nil
+	return nil
 }
 
 func (d *cacheDriver) Remove(r *volume.RemoveRequest) error {
-  logrus.WithField("method", "remove").Debugf("%#v", r)
+	logrus.WithField("method", "remove").Debugf("%#v", r)
 
-  d.Lock()
-  defer d.Unlock()
-  return nil
+	d.Lock()
+	defer d.Unlock()
+	return nil
 }
-
 
 func (d *cacheDriver) Path(r *volume.PathRequest) (*volume.PathResponse, error) {
-  logrus.WithField("method", "path").Debugf("%#v", r)
+	logrus.WithField("method", "path").Debugf("%#v", r)
 
-  d.RLock()
-  defer d.RUnlock()
-  return nil, nil
+	d.RLock()
+	defer d.RUnlock()
+	return nil, nil
 }
 
-func (d *cacheDriver) Mount(r *volume.MountRequest) (*volume.MountResponse, error) {
-  logrus.WithField("method", "mount").Debugf("%#v", r)
+func (driver *cacheDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, error) {
+	logrus.WithField("method", "mount").Debugf("%#v", req)
 
-  d.Lock()
-  defer d.Unlock()
-  return nil, nil
+	driver.Lock()
+	defer driver.Unlock()
+
+	jobName, buildNumber, err := getNames(req.Name)
+	if err != nil {
+		return &volume.MountResponse{}, err
+	}
+	if err := newBuildVolume(jobName, buildNumber, driver.rootDirs).mount(); err != nil {
+		return &volume.MountResponse{}, err
+	}
+
+	return &volume.MountResponse{Mountpoint: path.Join(driver.rootDirs.merged, jobName, buildNumber)}, nil
+
 }
 
 func (d *cacheDriver) Unmount(r *volume.UnmountRequest) error {
-  logrus.WithField("method", "unmount").Debugf("%#v", r)
+	logrus.WithField("method", "unmount").Debugf("%#v", r)
 
-  d.Lock()
-  defer d.Unlock()
-  return nil
+	d.Lock()
+	defer d.Unlock()
+	return nil
 }
 
 func (d *cacheDriver) Get(r *volume.GetRequest) (*volume.GetResponse, error) {
-  logrus.WithField("method", "get").Debugf("%#v", r)
+	logrus.WithField("method", "get").Debugf("%#v", r)
 
-  d.Lock()
-  defer d.Unlock()
+	d.Lock()
+	defer d.Unlock()
 
-  jobName, buildNumber, err := getNames(r.Name)
-  if err != nil{
-    return nil, err
-  }
-  buildVolume := newBuildVolume(jobName, buildNumber, d.rootDirs)
+	jobName, buildNumber, err := getNames(r.Name)
+	if err != nil {
+		return nil, err
+	}
+	buildVolume := newBuildVolume(jobName, buildNumber, d.rootDirs)
 
-  if buildVolume.exists() {
-    return &volume.GetResponse{ Volume: d.volume(jobName, buildNumber) }, nil
+	if buildVolume.exists() {
+		return &volume.GetResponse{Volume: d.volume(jobName, buildNumber)}, nil
 
-  }
-  return &volume.GetResponse{}, logError("volume %s not found", r.Name)
+	}
+	return &volume.GetResponse{}, logError("volume %s not found", r.Name)
 }
 
 func (d *cacheDriver) List() (*volume.ListResponse, error) {
-  logrus.WithField("method", "list").Debugf("")
+	logrus.WithField("method", "list").Debugf("")
 
-  d.Lock()
-  defer d.Unlock()
+	d.Lock()
+	defer d.Unlock()
 
-  return nil, nil
+	return nil, nil
 }
 
 func (d *cacheDriver) Capabilities() *volume.CapabilitiesResponse {
-  logrus.WithField("method", "capabilities").Debugf("")
-  return &volume.CapabilitiesResponse{Capabilities: volume.Capability{Scope: "local"}}
+	logrus.WithField("method", "capabilities").Debugf("")
+	return &volume.CapabilitiesResponse{Capabilities: volume.Capability{Scope: "local"}}
 }
 
 func (driver *cacheDriver) volume(jobName, buildNumber string) *volume.Volume {
@@ -141,14 +148,14 @@ func (driver *cacheDriver) volume(jobName, buildNumber string) *volume.Volume {
 }
 
 func getNames(volumeName string) (string, string, error) {
-  names := strings.Split(volumeName, "-")
-  if len(names) > 1 {
-    return names[0], names[1], nil
-  }
-  return "", "", errors.New(volumeName + " is not valid.")
+	names := strings.Split(volumeName, "-")
+	if len(names) > 1 {
+		return names[0], names[1], nil
+	}
+	return "", "", errors.New(volumeName + " is not valid.")
 }
 
 func logError(format string, args ...interface{}) error {
-  logrus.Errorf(format, args...)
-  return fmt.Errorf(format, args)
+	logrus.Errorf(format, args...)
+	return fmt.Errorf(format, args)
 }
