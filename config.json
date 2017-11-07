@@ -14,7 +14,7 @@
     }
   ],
   "interface": {
-    "socket": "cache.sock",
+    "socket": "cache-driver.sock",
     "types": [
       "docker.volumedriver/1.0"
     ]
