@@ -1,2 +1,3 @@
 docker-cache-volume-plugin
-cachedriver-plugin/
+plugin/
+plugin.tar
