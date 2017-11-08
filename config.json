@@ -2,7 +2,7 @@
   "description": "Cache driver plugin",
   "documentation": "<coming soon>",
   "entrypoint": [
-    "/docker-volume-cache"
+    "/docker-cache-volume-plugin"
   ],
   "env": [
     {
@@ -46,5 +46,5 @@
   "network": {
     "type": "host"
   },
-  "propagatedmount": "/mnt/volumes"
+  "propagatedmount": "/mnt/cache-merged/a"
 }
