@@ -1,4 +1,4 @@
-PLUGIN_NAME = suryagaddipati/cachedriver
+PLUGIN_NAME = rapt/cachedriver
 PLUGIN_TAG ?= next
 
 all: clean rootfs create
