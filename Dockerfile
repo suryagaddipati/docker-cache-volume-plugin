@@ -10,7 +10,7 @@ CMD ["/go/bin/docker-cache-volume-plugin"]
 
 FROM alpine
 RUN apk update && apk add sshfs
-RUN mkdir -p /run/docker/plugins /mnt/state /mnt/volumes /mnt/cache-merged/a
+RUN mkdir -p /run/docker/plugins /mnt/state /mnt/volumes /mnt/cache/merged/
 COPY --from=builder /go/bin/docker-cache-volume-plugin .
 CMD ["docker-cache-volume-plugin"]
 

@@ -15,10 +15,10 @@ func main() {
 	if ok, _ := strconv.ParseBool(debug); ok {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
-	lowerRootDir := "/cache"
-	upperRootDir := "/mnt/cache-upper"
-	workRootDir := "/mnt/cache-work"
-	mergedRootDir := "/mnt/cache-merged"
+	lowerRootDir := "/mnt/cache/lower"
+	upperRootDir := "/mnt/cache/upper"
+	workRootDir := "/mnt/cache/work"
+	mergedRootDir := "/mnt/cache/merged"
 
 	d, err := newCacheDriver(lowerRootDir, upperRootDir, workRootDir, mergedRootDir)
 	if err != nil {

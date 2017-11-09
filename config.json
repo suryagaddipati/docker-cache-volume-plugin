@@ -46,5 +46,5 @@
   "network": {
     "type": "host"
   },
-  "propagatedmount": "/mnt/cache-merged/a"
+  "propagatedmount": "/mnt/cache/merged"
 }
