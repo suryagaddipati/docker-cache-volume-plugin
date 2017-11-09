@@ -42,6 +42,19 @@
       ],
       "type": "bind"
     }
+    ,
+    {
+      "destination": "/mnt/cache/lower",
+      "options": [
+        "rbind"
+      ],
+      "name": "cache",
+      "source": "/cache",
+      "settable": [
+        "source"
+      ],
+      "type": "bind"
+    }
   ],
   "network": {
     "type": "host"
