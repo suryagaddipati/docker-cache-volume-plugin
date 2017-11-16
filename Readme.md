@@ -2,7 +2,7 @@ Docker volume driver to give your container exclusive view of underlying filesys
 
 Changes made by container are written back to cache on container exit.
 
-*Note*: There is no conflict resolution, latest change overrides all previous changes.
+*Note*: There is no conflict resolution between changes made by concurrent containers, latest container to exit overwrites all previous changes.
 
 ### Installation
 
@@ -94,7 +94,7 @@ docker run --rm -it --name four --volume-driver  rapt/cachedriver  -v foo-four:/
 foo-one.txt
 ```
 
-Inside volume container, container `four` uses `three` as lower 
+Inside volume container, container `four` uses `three` as lower
 
 ```
 / # mount | grep foo
