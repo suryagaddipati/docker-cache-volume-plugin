@@ -1,6 +1,5 @@
-Docker volume driver to give your container exclusive view of underlying filesystem cache using [overlayfs](https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt).Think of it as `Read committed Isolation level` for your filesystem cache.
-
-Changes made by container are written back to cache on container exit.
+Docker volume driver to give your container exclusive view of underlying filesystem cache using [overlayfs](https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt).Think of it as `Read committed Isolation level` for your filesystem cache between concurrently running containers.
+Changes made by container are synced back to cache on container exit.
 
 *Note*: There is no conflict resolution between changes made by concurrent containers, latest container to exit overwrites all previous changes.
 
